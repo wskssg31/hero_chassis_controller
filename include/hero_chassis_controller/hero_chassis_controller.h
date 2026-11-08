@@ -7,13 +7,15 @@
 namespace hero_chassis_controller {
 
 class HeroChassisController
-    : public controller_interface::Controller<hardware_interface::EffortJointInterface> {
+    : public controller_interface::Controller<
+          hardware_interface::EffortJointInterface> {
  public:
   HeroChassisController() = default;
   ~HeroChassisController() override = default;
 
-  bool init(hardware_interface::EffortJointInterface* effort_joint_interface,
-            ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  bool init(
+      hardware_interface::EffortJointInterface* effort_joint_interface,
+      ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   void update(const ros::Time& time, const ros::Duration& period) override;
 
  private:
