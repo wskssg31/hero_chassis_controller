@@ -4,6 +4,7 @@ controller:
     wheel_radius: 0.07625
     chassis_length: 0.4
     chassis_width: 0.4
+    velocity_mode: body
     odom_frame: odom
     base_frame: base_link
     pid:

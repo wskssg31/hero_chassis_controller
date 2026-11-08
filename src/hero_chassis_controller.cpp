@@ -42,8 +42,13 @@ bool HeroChassisController::init(
   controller_nh.param("wheel_radius", wheel_radius_, 0.07625);
   controller_nh.param("chassis_length", chassis_length_, 0.4);
   controller_nh.param("chassis_width", chassis_width_, 0.4);
+  controller_nh.param("velocity_mode", velocity_mode_, std::string("body"));
   controller_nh.param("odom_frame", odom_frame_, std::string("odom"));
   controller_nh.param("base_frame", base_frame_, std::string("base_link"));
+  if (velocity_mode_ != "body" && velocity_mode_ != "world") {
+    ROS_WARN("Unknown velocity_mode '%s'; using body mode.", velocity_mode_.c_str());
+    velocity_mode_ = "body";
+  }
   odom_publisher_ = controller_nh.advertise<nav_msgs::Odometry>("/odom", 10);
   std::array<double, 4> zero_speeds{{0.0, 0.0, 0.0, 0.0}};
   target_wheel_speeds_.writeFromNonRT(zero_speeds);
@@ -101,13 +106,35 @@ void HeroChassisController::backRightPidCallback(PidConfig& config, uint32_t) {
 }
 
 void HeroChassisController::cmdVelCallback(const geometry_msgs::Twist& command) {
+  double vx = command.linear.x;
+  double vy = command.linear.y;
+
+  if (velocity_mode_ == "world") {
+    try {
+      tf::Stamped<tf::Vector3> world_velocity(
+          tf::Vector3(command.linear.x, command.linear.y, 0.0), ros::Time(0),
+          odom_frame_);
+      tf::Stamped<tf::Vector3> body_velocity;
+      tf_listener_.transformVector(base_frame_, world_velocity, body_velocity);
+      vx = body_velocity.x();
+      vy = body_velocity.y();
+    } catch (const tf::TransformException& exception) {
+      ROS_WARN_THROTTLE(1.0, "Failed to transform /cmd_vel from %s to %s: %s",
+                        odom_frame_.c_str(), base_frame_.c_str(),
+                        exception.what());
+      target_wheel_speeds_.writeFromNonRT(
+          std::array<double, 4>{{0.0, 0.0, 0.0, 0.0}});
+      return;
+    }
+  }
+
   const double half_sum = 0.5 * (chassis_length_ + chassis_width_);
   const double scale = 1.0 / wheel_radius_;
   std::array<double, 4> target_speeds{{
-      scale * (command.linear.x - command.linear.y - half_sum * command.angular.z),
-      scale * (command.linear.x + command.linear.y + half_sum * command.angular.z),
-      scale * (command.linear.x + command.linear.y - half_sum * command.angular.z),
-      scale * (command.linear.x - command.linear.y + half_sum * command.angular.z)}};
+      scale * (vx - vy - half_sum * command.angular.z),
+      scale * (vx + vy + half_sum * command.angular.z),
+      scale * (vx + vy - half_sum * command.angular.z),
+      scale * (vx - vy + half_sum * command.angular.z)}};
   target_wheel_speeds_.writeFromNonRT(target_speeds);
 }
 

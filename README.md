@@ -63,3 +63,12 @@ back_right  = (vx - vy + (L + W) * wz / 2) / r
 
 当前默认参数来自 `config/controllers.yaml`：`r=0.07625 m`、`L=0.4 m`、`W=0.4 m`。
 没有收到 `/cmd_vel` 时，目标轮速保持为零。
+
+## 速度坐标模式
+
+`config/controllers.yaml` 中的 `velocity_mode` 支持 `body` 和 `world`：
+
+- `body`：默认模式。将 `/cmd_vel` 解释为 `base_link` 坐标系速度，直接进行麦克纳姆逆运动学。
+- `world`：将 `/cmd_vel` 的线速度解释为 `odom` 坐标系速度，使用当前 `odom -> base_link` TF 转换到车体坐标系后再进行逆运动学。`angular.z` 始终保留 ROS z 轴角速度含义，不做坐标旋转。
+
+TF 转换失败时，控制器会输出 `ROS_WARN` 并将四个目标轮速清零。

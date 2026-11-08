@@ -8,6 +8,7 @@
 #include <nav_msgs/Odometry.h>
 #include <realtime_tools/realtime_buffer.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 
@@ -54,6 +55,8 @@ class HeroChassisController
   ros::Subscriber cmd_vel_subscriber_;
   ros::Publisher odom_publisher_;
   tf::TransformBroadcaster tf_broadcaster_;
+  tf::TransformListener tf_listener_;
+  std::string velocity_mode_;
   std::string odom_frame_;
   std::string base_frame_;
   double x_{};
