@@ -1,0 +1,13 @@
+<launch>
+  <arg name="load_chassis" default="true"/>
+  <arg name="paused" default="true"/>
+  <arg name="roller_type" default="realistic"/>
+  <param name="robot_description" command="$(find xacro)/xacro $(find rm_description_for_task)/urdf/hero/hero.urdf.xacro load_chassis:=$(arg load_chassis) use_simulation:=true roller_type:=$(arg roller_type)"/>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="false"/>
+    <arg name="world_name" value="$(find rm_gazebo)/worlds/empty.world"/>
+  </include>
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" clear_params="true" args="-z 0.5 -param robot_description -urdf -model hero" output="screen"/>
+  <include file="$(find hero_chassis_controller)/launch/load_controller.launch"/>
+</launch>
