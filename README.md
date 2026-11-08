@@ -72,3 +72,21 @@ back_right  = (vx - vy + (L + W) * wz / 2) / r
 - `world`：将 `/cmd_vel` 的线速度解释为 `odom` 坐标系速度，使用当前 `odom -> base_link` TF 转换到车体坐标系后再进行逆运动学。`angular.z` 始终保留 ROS z 轴角速度含义，不做坐标旋转。
 
 TF 转换失败时，控制器会输出 `ROS_WARN` 并将四个目标轮速清零。
+
+## 特色功能：可配置的 `/cmd_vel` 指令加速度限制
+
+当前 `rm-noetic-dev:sim` 镜像未安装 `teleop_twist_keyboard`，因此本项目提供可配置的 `/cmd_vel` 指令速度斜坡限制：
+
+```yaml
+max_linear_acceleration: 1.0  # m/s^2，限制 linear.x 和 linear.y
+max_angular_acceleration: 2.0 # rad/s^2，限制 angular.z
+```
+
+控制器根据相邻 `/cmd_vel` 回调的时间间隔限制指令变化率，再将限制后的指令交给坐标模式、麦克纳姆逆运动学和 PID 控制链路。该功能验收的是指令或目标速度变化率：
+
+```text
+|Δlinear| / Δt <= max_linear_acceleration
+|Δangular.z| / Δt <= max_angular_acceleration
+```
+
+它不保证 `/odom` 经过 PID、Gazebo 物理引擎和机械动力学后的实际车辆加速度低于相同上限。发送零速度指令后，限制器会让目标速度逐步回到零，车辆随后减速停止。

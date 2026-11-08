@@ -4,6 +4,7 @@
 
 #include <boost/bind.hpp>
 
+#include <algorithm>
 #include <cmath>
 
 #include <tf/transform_datatypes.h>
@@ -42,6 +43,8 @@ bool HeroChassisController::init(
   controller_nh.param("wheel_radius", wheel_radius_, 0.07625);
   controller_nh.param("chassis_length", chassis_length_, 0.4);
   controller_nh.param("chassis_width", chassis_width_, 0.4);
+  controller_nh.param("max_linear_acceleration", max_linear_acceleration_, 1.0);
+  controller_nh.param("max_angular_acceleration", max_angular_acceleration_, 2.0);
   controller_nh.param("velocity_mode", velocity_mode_, std::string("body"));
   controller_nh.param("odom_frame", odom_frame_, std::string("odom"));
   controller_nh.param("base_frame", base_frame_, std::string("base_link"));
@@ -106,8 +109,21 @@ void HeroChassisController::backRightPidCallback(PidConfig& config, uint32_t) {
 }
 
 void HeroChassisController::cmdVelCallback(const geometry_msgs::Twist& command) {
-  double vx = command.linear.x;
-  double vy = command.linear.y;
+  const ros::Time now = ros::Time::now();
+  const double dt = last_command_time_.isZero()
+                        ? 0.0
+                        : (now - last_command_time_).toSec();
+  last_command_time_ = now;
+  const double linear_step = max_linear_acceleration_ * std::max(0.0, dt);
+  const double angular_step = max_angular_acceleration_ * std::max(0.0, dt);
+  const auto limit_step = [](double target, double current, double step) {
+    return std::max(current - step, std::min(current + step, target));
+  };
+  limited_vx_ = limit_step(command.linear.x, limited_vx_, linear_step);
+  limited_vy_ = limit_step(command.linear.y, limited_vy_, linear_step);
+  limited_wz_ = limit_step(command.angular.z, limited_wz_, angular_step);
+  double vx = limited_vx_;
+  double vy = limited_vy_;
 
   if (velocity_mode_ == "world") {
     try {

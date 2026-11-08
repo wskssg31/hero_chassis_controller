@@ -67,6 +67,12 @@ class HeroChassisController
   double wheel_radius_{};
   double chassis_length_{};
   double chassis_width_{};
+  double max_linear_acceleration_{};
+  double max_angular_acceleration_{};
+  double limited_vx_{};
+  double limited_vy_{};
+  double limited_wz_{};
+  ros::Time last_command_time_;
 };
 
 }  // namespace hero_chassis_controller

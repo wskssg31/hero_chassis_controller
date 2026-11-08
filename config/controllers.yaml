@@ -4,6 +4,8 @@ controller:
     wheel_radius: 0.07625
     chassis_length: 0.4
     chassis_width: 0.4
+    max_linear_acceleration: 1.0
+    max_angular_acceleration: 2.0
     velocity_mode: body
     odom_frame: odom
     base_frame: base_link
