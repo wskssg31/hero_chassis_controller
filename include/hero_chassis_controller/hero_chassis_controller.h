@@ -5,11 +5,14 @@
 #include <control_toolbox/pid.h>
 #include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Odometry.h>
 #include <realtime_tools/realtime_buffer.h>
+#include <tf/transform_broadcaster.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 
 #include <array>
+#include <string>
 #include <memory>
 
 namespace hero_chassis_controller {
@@ -49,6 +52,14 @@ class HeroChassisController
   std::unique_ptr<PidServer> back_left_pid_server_;
   std::unique_ptr<PidServer> back_right_pid_server_;
   ros::Subscriber cmd_vel_subscriber_;
+  ros::Publisher odom_publisher_;
+  tf::TransformBroadcaster tf_broadcaster_;
+  std::string odom_frame_;
+  std::string base_frame_;
+  double x_{};
+  double y_{};
+  double yaw_{};
+  bool odom_initialized_{};
   realtime_tools::RealtimeBuffer<std::array<double, 4>> target_wheel_speeds_;
   double wheel_radius_{};
   double chassis_length_{};

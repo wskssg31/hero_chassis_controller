@@ -4,6 +4,8 @@ controller:
     wheel_radius: 0.07625
     chassis_length: 0.4
     chassis_width: 0.4
+    odom_frame: odom
+    base_frame: base_link
     pid:
       front_left: {p: 1.0, i: 0.0, d: 0.0}
       front_right: {p: 1.0, i: 0.0, d: 0.0}

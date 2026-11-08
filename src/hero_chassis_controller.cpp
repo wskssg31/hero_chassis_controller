@@ -4,6 +4,10 @@
 
 #include <boost/bind.hpp>
 
+#include <cmath>
+
+#include <tf/transform_datatypes.h>
+
 namespace hero_chassis_controller {
 
 bool initPid(control_toolbox::Pid& pid, const ros::NodeHandle& node) {
@@ -38,6 +42,9 @@ bool HeroChassisController::init(
   controller_nh.param("wheel_radius", wheel_radius_, 0.07625);
   controller_nh.param("chassis_length", chassis_length_, 0.4);
   controller_nh.param("chassis_width", chassis_width_, 0.4);
+  controller_nh.param("odom_frame", odom_frame_, std::string("odom"));
+  controller_nh.param("base_frame", base_frame_, std::string("base_link"));
+  odom_publisher_ = controller_nh.advertise<nav_msgs::Odometry>("/odom", 10);
   std::array<double, 4> zero_speeds{{0.0, 0.0, 0.0, 0.0}};
   target_wheel_speeds_.writeFromNonRT(zero_speeds);
   cmd_vel_subscriber_ = controller_nh.subscribe(
@@ -115,6 +122,64 @@ void HeroChassisController::update(const ros::Time& time,
       (*target_speeds)[2] - back_left_joint_.getVelocity();
   const double back_right_error =
       (*target_speeds)[3] - back_right_joint_.getVelocity();
+
+  const double half_sum = 0.5 * (chassis_length_ + chassis_width_);
+  const double front_left_velocity = front_left_joint_.getVelocity();
+  const double front_right_velocity = front_right_joint_.getVelocity();
+  const double back_left_velocity = back_left_joint_.getVelocity();
+  const double back_right_velocity = back_right_joint_.getVelocity();
+  const double vx = wheel_radius_ *
+                    (front_left_velocity + front_right_velocity +
+                     back_left_velocity + back_right_velocity) / 4.0;
+  const double vy = wheel_radius_ *
+                    (-front_left_velocity + front_right_velocity +
+                     back_left_velocity - back_right_velocity) / 4.0;
+  const double wz = wheel_radius_ *
+                    (-front_left_velocity + front_right_velocity -
+                     back_left_velocity + back_right_velocity) /
+                    (4.0 * half_sum);
+
+  if (!odom_initialized_) {
+    odom_initialized_ = true;
+  } else {
+    const double dt = period.toSec();
+    x_ += (vx * std::cos(yaw_) - vy * std::sin(yaw_)) * dt;
+    y_ += (vx * std::sin(yaw_) + vy * std::cos(yaw_)) * dt;
+    yaw_ += wz * dt;
+  }
+
+  nav_msgs::Odometry odom;
+  odom.header.stamp = time;
+  odom.header.frame_id = odom_frame_;
+  odom.child_frame_id = base_frame_;
+  odom.pose.pose.position.x = x_;
+  odom.pose.pose.position.y = y_;
+  odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(yaw_);
+  odom.twist.twist.linear.x = vx;
+  odom.twist.twist.linear.y = vy;
+  odom.twist.twist.angular.z = wz;
+  odom.pose.covariance[0] = 1e-3;
+  odom.pose.covariance[7] = 1e-3;
+  odom.pose.covariance[14] = 1e6;
+  odom.pose.covariance[21] = 1e6;
+  odom.pose.covariance[28] = 1e6;
+  odom.pose.covariance[35] = 1e-3;
+  odom.twist.covariance[0] = 1e-3;
+  odom.twist.covariance[7] = 1e-3;
+  odom.twist.covariance[14] = 1e6;
+  odom.twist.covariance[21] = 1e6;
+  odom.twist.covariance[28] = 1e6;
+  odom.twist.covariance[35] = 1e-3;
+  odom_publisher_.publish(odom);
+
+  geometry_msgs::TransformStamped transform;
+  transform.header.stamp = time;
+  transform.header.frame_id = odom_frame_;
+  transform.child_frame_id = base_frame_;
+  transform.transform.translation.x = x_;
+  transform.transform.translation.y = y_;
+  transform.transform.rotation = odom.pose.pose.orientation;
+  tf_broadcaster_.sendTransform(transform);
 
   front_left_joint_.setCommand(
       front_left_pid_.computeCommand(front_left_error, period));

@@ -8,6 +8,8 @@ add_definitions(-Wall -Werror)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   geometry_msgs
+  nav_msgs
+  tf
   realtime_tools
   control_toolbox
   dynamic_reconfigure
@@ -23,6 +25,8 @@ catkin_package(
   CATKIN_DEPENDS
     roscpp
     geometry_msgs
+    nav_msgs
+    tf
     realtime_tools
     control_toolbox
     dynamic_reconfigure
