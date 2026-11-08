@@ -7,6 +7,8 @@ add_definitions(-Wall -Werror)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  control_toolbox
+  dynamic_reconfigure
   controller_interface
   hardware_interface
   forward_command_controller
@@ -18,6 +20,8 @@ catkin_package(
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
     roscpp
+    control_toolbox
+    dynamic_reconfigure
     controller_interface
     hardware_interface
     forward_command_controller
