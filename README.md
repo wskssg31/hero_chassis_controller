@@ -43,3 +43,23 @@ CMake 配置和构建验证结果由本次操作报告提供；尚未进行控�
 ## 许可证
 
 沿用原模板的 [BSD 3-Clause 许可证](LICENSE)，保留原许可证及版权声明。
+
+## /cmd_vel 与麦克纳姆逆运动学
+
+控制器订阅 `/cmd_vel`（`geometry_msgs/Twist`），将其解释为 `base_link` 底盘坐标系速度：
+
+- `linear.x`：向前为正
+- `linear.y`：向左为正
+- `angular.z`：逆时针为正
+
+轮子顺序为 `front_left`、`front_right`、`back_left`、`back_right`。设轮半径为 `r`，底盘长度为 `L`，宽度为 `W`，则目标角速度为：
+
+```text
+front_left  = (vx - vy - (L + W) * wz / 2) / r
+front_right = (vx + vy + (L + W) * wz / 2) / r
+back_left   = (vx + vy - (L + W) * wz / 2) / r
+back_right  = (vx - vy + (L + W) * wz / 2) / r
+```
+
+当前默认参数来自 `config/controllers.yaml`：`r=0.07625 m`、`L=0.4 m`、`W=0.4 m`。
+没有收到 `/cmd_vel` 时，目标轮速保持为零。

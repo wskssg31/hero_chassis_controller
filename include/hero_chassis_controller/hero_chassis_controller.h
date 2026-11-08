@@ -4,9 +4,12 @@
 #include <control_toolbox/ParametersConfig.h>
 #include <control_toolbox/pid.h>
 #include <dynamic_reconfigure/server.h>
+#include <geometry_msgs/Twist.h>
+#include <realtime_tools/realtime_buffer.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 
+#include <array>
 #include <memory>
 
 namespace hero_chassis_controller {
@@ -31,13 +34,12 @@ class HeroChassisController
   void frontRightPidCallback(PidConfig& config, uint32_t level);
   void backLeftPidCallback(PidConfig& config, uint32_t level);
   void backRightPidCallback(PidConfig& config, uint32_t level);
+  void cmdVelCallback(const geometry_msgs::Twist& command);
 
   hardware_interface::JointHandle front_left_joint_;
   hardware_interface::JointHandle front_right_joint_;
   hardware_interface::JointHandle back_left_joint_;
   hardware_interface::JointHandle back_right_joint_;
-  int state_{};
-  ros::Time last_change_;
   control_toolbox::Pid front_left_pid_;
   control_toolbox::Pid front_right_pid_;
   control_toolbox::Pid back_left_pid_;
@@ -46,6 +48,11 @@ class HeroChassisController
   std::unique_ptr<PidServer> front_right_pid_server_;
   std::unique_ptr<PidServer> back_left_pid_server_;
   std::unique_ptr<PidServer> back_right_pid_server_;
+  ros::Subscriber cmd_vel_subscriber_;
+  realtime_tools::RealtimeBuffer<std::array<double, 4>> target_wheel_speeds_;
+  double wheel_radius_{};
+  double chassis_length_{};
+  double chassis_width_{};
 };
 
 }  // namespace hero_chassis_controller

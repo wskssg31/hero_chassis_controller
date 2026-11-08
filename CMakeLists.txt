@@ -7,6 +7,8 @@ add_definitions(-Wall -Werror)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  geometry_msgs
+  realtime_tools
   control_toolbox
   dynamic_reconfigure
   controller_interface
@@ -20,6 +22,8 @@ catkin_package(
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
     roscpp
+    geometry_msgs
+    realtime_tools
     control_toolbox
     dynamic_reconfigure
     controller_interface

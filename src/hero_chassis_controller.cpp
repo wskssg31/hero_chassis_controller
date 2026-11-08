@@ -35,6 +35,14 @@ bool HeroChassisController::init(
   back_right_joint_ =
       effort_joint_interface->getHandle("right_back_wheel_joint");
 
+  controller_nh.param("wheel_radius", wheel_radius_, 0.07625);
+  controller_nh.param("chassis_length", chassis_length_, 0.4);
+  controller_nh.param("chassis_width", chassis_width_, 0.4);
+  std::array<double, 4> zero_speeds{{0.0, 0.0, 0.0, 0.0}};
+  target_wheel_speeds_.writeFromNonRT(zero_speeds);
+  cmd_vel_subscriber_ = controller_nh.subscribe(
+      "/cmd_vel", 1, &HeroChassisController::cmdVelCallback, this);
+
   ros::NodeHandle front_left_pid_nh(controller_nh, "pid/front_left");
   ros::NodeHandle front_right_pid_nh(controller_nh, "pid/front_right");
   ros::NodeHandle back_left_pid_nh(controller_nh, "pid/back_left");
@@ -85,29 +93,28 @@ void HeroChassisController::backRightPidCallback(PidConfig& config, uint32_t) {
                            config.i_clamp_min, config.antiwindup);
 }
 
+void HeroChassisController::cmdVelCallback(const geometry_msgs::Twist& command) {
+  const double half_sum = 0.5 * (chassis_length_ + chassis_width_);
+  const double scale = 1.0 / wheel_radius_;
+  std::array<double, 4> target_speeds{{
+      scale * (command.linear.x - command.linear.y - half_sum * command.angular.z),
+      scale * (command.linear.x + command.linear.y + half_sum * command.angular.z),
+      scale * (command.linear.x + command.linear.y - half_sum * command.angular.z),
+      scale * (command.linear.x - command.linear.y + half_sum * command.angular.z)}};
+  target_wheel_speeds_.writeFromNonRT(target_speeds);
+}
+
 void HeroChassisController::update(const ros::Time& time,
                                    const ros::Duration& period) {
-  static const double target_speeds[6][4] = {
-      {1.0, 1.0, 1.0, 1.0},
-      {-2.0, -2.0, -2.0, -2.0},
-      {-1.0, 1.0, 1.0, -1.0},
-      {2.0, -2.0, -2.0, 2.0},
-      {2.0, -2.0, 2.0, -2.0},
-      {-1.0, 1.0, -1.0, 1.0}};
-
-  if ((time - last_change_).toSec() > 2) {
-    state_ = (state_ + 1) % 6;
-    last_change_ = time;
-  }
-
+  const std::array<double, 4>* target_speeds = target_wheel_speeds_.readFromRT();
   const double front_left_error =
-      target_speeds[state_][0] - front_left_joint_.getVelocity();
+      (*target_speeds)[0] - front_left_joint_.getVelocity();
   const double front_right_error =
-      target_speeds[state_][1] - front_right_joint_.getVelocity();
+      (*target_speeds)[1] - front_right_joint_.getVelocity();
   const double back_left_error =
-      target_speeds[state_][2] - back_left_joint_.getVelocity();
+      (*target_speeds)[2] - back_left_joint_.getVelocity();
   const double back_right_error =
-      target_speeds[state_][3] - back_right_joint_.getVelocity();
+      (*target_speeds)[3] - back_right_joint_.getVelocity();
 
   front_left_joint_.setCommand(
       front_left_pid_.computeCommand(front_left_error, period));

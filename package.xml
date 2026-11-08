@@ -13,6 +13,8 @@
   <!-- build_depend: dependencies only used in source files -->
   <!-- depend: build, export, and execution dependency -->
   <depend>roscpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>realtime_tools</depend>
   <depend>control_toolbox</depend>
   <depend>dynamic_reconfigure</depend>
   <depend>controller_interface</depend>
