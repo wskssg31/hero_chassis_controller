@@ -13,15 +13,7 @@ RoboMaster 英雄机器人底盘控制器作业项目，面向 ROS Noetic / catk
 
 ## 构建
 
-当前仅依赖 catkin，不需要模板示例使用的 sensor_msgs、Eigen、Boost 或 roslint。
-
-在已安装 ROS Noetic 的 catkin 工作空间中：
-
-```bash
-source /opt/ros/noetic/setup.bash
-cd <catkin_workspace>
-catkin_make --only-pkg-with-deps hero_chassis_controller
-```
+本包使用 catkin 构建，ROS 依赖见 package.xml
 
 CLion 复用此前 simple_chassis_controller 的 Docker 工具链，配置参数为：
 
@@ -29,14 +21,12 @@ CLion 复用此前 simple_chassis_controller 的 Docker 工具链，配置参数
 -DCMAKE_PREFIX_PATH=/opt/ros/noetic -DPYTHON_EXECUTABLE=/usr/bin/python3
 ```
 
-CMake 配置和构建验证结果由本次操作报告提供；尚未进行控制功能或硬件测试。
+已在 ROS Noetic Docker 环境中完成构建，并在 Gazebo 中验证控制功能。
 
-## 维护者信息待填写
+## 维护者
 
-请提供以下 package.xml 字段：
-
-- 维护者姓名（maintainer 文本，当前为 TODO）
-- 维护者邮箱（maintainer email，当前为 todo@example.com）
+- 维护者姓名 Sikai Wang
+- 维护者邮箱 wangsikai2008@qq.com
 
 原模板作者署名保留，不代表当前项目维护者。
 

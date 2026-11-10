@@ -3,8 +3,7 @@
   <name>hero_chassis_controller</name>
   <version>0.1.0</version>
   <description>RoboMaster hero chassis controller package scaffold.</description>
-  <!-- TODO: Replace maintainer name and email with confirmed project contact. -->
-  <maintainer email="todo@example.com">TODO</maintainer>
+  <maintainer email="wangsikai2008@qq.com">Sikai Wang</maintainer>
   <license>BSD</license>
   <author email="liaoqiayuan@gmail.com">Qiayuan Liao</author>
 
